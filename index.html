@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Alimentos</title>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+    <h1>Gestión de Alimentos</h1>
+
+    <div class="main-container">
+        <!-- Formulario de Agregar Alimento -->
+        <form id="form-agregar">
+            <h2>Agregar Alimento</h2>
+            <label for="id-personalizado">ID :</label>
+            <input type="text" id="id-personalizado" name="id-personalizado" required>
+            <label for="nombre">Nombre de Alimento:</label>
+            <input type="text" id="nombre" name="nombre" required>
+
+            <label for="cantidad">Cantidad:</label>
+            <input type="text" id="cantidad" name="cantidad" required>
+            <button type="submit">Agregar Alimento</button>
+        </form>
+
+        <!-- Tabla de Alimentos -->
+        <div>
+            <h2>Lista de Alimentos</h2>
+            <table id="lista-alimentos">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        
+                        <th>Cantidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Los datos de los alimentos se insertarán aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Script de funcionalidad -->
+    <script>
+        // Funcionalidad de agregar, eliminar, y cargar alimentos
+        document.getElementById('form-agregar').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const idPersonalizado = document.getElementById('id-personalizado').value;
+            const nombre = document.getElementById('nombre').value;
+            
+            const cantidad = document.getElementById('cantidad').value;
+
+            const response = await fetch('/agregar-alimento', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: idPersonalizado, nombre, cantidad })
+            });
+
+            if (response.ok) {
+                alert('Alimento agregado exitosamente');
+                document.getElementById('form-agregar').reset();
+                loadAlimentos();
+            } else {
+                alert('Error al agregar el alimento');
+            }
+        });
+
+        async function loadAlimentos() {
+            const response = await fetch('/lista-alimentos');
+            const data = await response.json();
+            const listaAlimentos = document.getElementById('lista-alimentos').getElementsByTagName('tbody')[0];
+            listaAlimentos.innerHTML = '';
+
+            data.data.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.nombre}</td>
+                    
+                    <td>${item.cantidad}</td>
+                    <td class="actions">
+                        <button onclick="eliminarAlimento('${item.id}')">Eliminar</button>
+                        <button onclick="editarAlimento('${item.id}')">Editar</button>
+                    </td>
+                `;
+                listaAlimentos.appendChild(tr);
+            });
+        }
+
+        async function eliminarAlimento(id) {
+            const response = await fetch(`/eliminar-alimento/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                alert('Alimento eliminado exitosamente');
+                loadAlimentos();
+            } else {
+                alert('Error al eliminar el alimento');
+            }
+        }
+
+        function editarAlimento(id) {
+            const nuevaCantidad = prompt('Ingrese la nueva cantidad:');
+            if (nuevaCantidad) {
+                fetch(`/actualizar-alimento/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ cantidad: nuevaCantidad })
+                }).then(response => {
+                    if (response.ok) {
+                        alert('Alimento modificado exitosamente');
+                        loadAlimentos();
+                    } else {
+                        alert('Error al modificar el alimento');
+                    }
+                });
+            }
+        }
+
+        loadAlimentos();
+    </script>
+</body>
+</html>
